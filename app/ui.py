@@ -40,6 +40,21 @@ def is_signed_in(token_path="token.json"):
     return Path(token_path).exists()
 
 
+def format_event_date(date_str):
+    if not date_str:
+        return ""
+    
+    try:
+        if "T" in date_str:
+            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            return dt.strftime("%b %d, %I:%M %p")
+        else:
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            return dt.strftime("%b %d")
+    except:
+        return date_str
+
+
 def get_filtered_events(creds):
     try:
         from googleapiclient.discovery import build
@@ -91,14 +106,16 @@ def get_filtered_events(creds):
     return events
 
 
-def refresh_events(status_var, events_list):
+def refresh_events(status_var, events_tree):
     creds = sign_in_google()
     events = get_filtered_events(creds)
 
-    events_list.delete(0, tk.END)
+    for item in events_tree.get_children():
+        events_tree.delete(item)
+    
     for start, title in events:
-        label = f"{start}  |  {title}" if start else title
-        events_list.insert(tk.END, label)
+        formatted_date = format_event_date(start)
+        events_tree.insert("", "end", values=(formatted_date, title))
 
     status_var.set(f"Loaded {len(events)} events")
 
@@ -115,11 +132,17 @@ def run_app():
     ttk.Label(frame, text="Google Sign-In").pack(anchor="w", pady=(0, 8))
 
     sign_in_button = ttk.Button(frame, text="Sign in with Google")
-    events_list = tk.Listbox(frame, width=90, height=18)
+    
+    columns = ("Date", "Event")
+    events_tree = ttk.Treeview(frame, columns=columns, show="headings", height=18)
+    events_tree.heading("Date", text="Date")
+    events_tree.heading("Event", text="Event")
+    events_tree.column("Date", width=150, anchor="w")
+    events_tree.column("Event", width=500, anchor="w")
 
     def on_sign_in():
         try:
-            refresh_events(status_var, events_list)
+            refresh_events(status_var, events_tree)
             sign_in_button.pack_forget()
         except Exception as exc:
             status_var.set(f"Error: {exc}")
@@ -129,13 +152,13 @@ def run_app():
     if is_signed_in():
         sign_in_button.pack_forget()
         try:
-            refresh_events(status_var, events_list)
+            refresh_events(status_var, events_tree)
         except Exception as exc:
             status_var.set(f"Error: {exc}")
     else:
         sign_in_button.pack(anchor="w")
 
-    events_list.pack(anchor="w", fill="both", expand=True, pady=(8, 0))
+    events_tree.pack(anchor="w", fill="both", expand=True, pady=(8, 0))
     ttk.Label(frame, textvariable=status_var).pack(anchor="w", pady=(12, 0))
 
     root.mainloop()
