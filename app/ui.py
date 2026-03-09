@@ -1530,7 +1530,6 @@ class VistaApp(ctk.CTk):
         def on_distracted():
             def _do():
                 self._show_focus_nudge()
-                webbrowser.open("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuTdiscNAFvZzY_JpIU7AvrZfqLDqfUowm2g&s")
             self.after(0, _do)
 
         self._focus_monitor = FocusMonitor(

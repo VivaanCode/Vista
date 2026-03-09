@@ -234,6 +234,9 @@ class FocusMonitor:
         self._set_slack_status("", "")
 
     def _loop(self):
+        # Initial 5-second grace period before the first screenshot is taken
+        time.sleep(5)
+        
         while self.running:
             start_time = time.time()
             try:
